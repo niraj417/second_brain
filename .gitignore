@@ -1,0 +1,19 @@
+# Miscellaneous OS clutter
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.bak
+
+# IDE configs
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Local app temporary memory caches
+second_brain_memory.json
+test_memory.json

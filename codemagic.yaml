@@ -1,0 +1,37 @@
+# Codemagic CI/CD Configuration for Second Brain TWS Assistant
+workflows:
+  android-apk-build:
+    name: Android APK Release Build
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+    environment:
+      flutter: stable
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: '*'
+          include: true
+          source: true
+    scripts:
+      - name: Fetch dependencies
+        script: |
+          cd second_brain_tws_app
+          flutter pub get
+      - name: Flutter static analysis
+        script: |
+          cd second_brain_tws_app
+          flutter analyze
+      - name: Build Release APK
+        script: |
+          cd second_brain_tws_app
+          flutter build apk --release --no-codesign
+    artifacts:
+      - second_brain_tws_app/build/app/outputs/flutter-apk/*.apk
+    publishing:
+      email:
+        recipients:
+          - niraj417@users.noreply.github.com
+        notify:
+          success: true
+          failure: true
