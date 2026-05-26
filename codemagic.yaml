@@ -1,4 +1,4 @@
-# Codemagic CI/CD Configuration for Second Brain TWS Assistant
+# Codemagic CI/CD Configuration for Second Brain TWS Assistant (Root Layout)
 workflows:
   android-apk-build:
     name: Android APK Release Build
@@ -16,18 +16,15 @@ workflows:
     scripts:
       - name: Fetch dependencies
         script: |
-          cd second_brain_tws_app
           flutter pub get
       - name: Flutter static analysis
         script: |
-          cd second_brain_tws_app
           flutter analyze
       - name: Build Release APK
         script: |
-          cd second_brain_tws_app
           flutter build apk --release --no-codesign
     artifacts:
-      - second_brain_tws_app/build/app/outputs/flutter-apk/*.apk
+      - build/app/outputs/flutter-apk/*.apk
     publishing:
       email:
         recipients:
