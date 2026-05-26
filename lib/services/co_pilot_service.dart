@@ -263,7 +263,9 @@ class CoPilotService extends ChangeNotifier {
           }
         }
       },
+      // ignore: deprecated_member_use
       listenFor: const Duration(seconds: 30),
+      // ignore: deprecated_member_use
       pauseFor: const Duration(seconds: 4),
       // ignore: deprecated_member_use
       partialResults: true,
