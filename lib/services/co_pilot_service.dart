@@ -15,7 +15,7 @@ class CoPilotService extends ChangeNotifier {
   final TaskRouter _router = TaskRouter();
 
   // State Variables
-  bool _isConnected = true; // Always active in direct serverless API mode!
+  final bool _isConnected = true; // Always active in direct serverless API mode!
   String _statusMessage = "Cognitive assistance ready.";
   
   final List<Map<String, dynamic>> _interventions = [];

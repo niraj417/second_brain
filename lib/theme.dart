@@ -28,7 +28,7 @@ class AppTheme {
       ),
       boxShadow: [
         BoxShadow(
-          color: (borderColor ?? glassCardBorder).withOpacity(0.05),
+          color: (borderColor ?? glassCardBorder).withValues(alpha: 0.05),
           blurRadius: 10,
           spreadRadius: 1,
         ),
@@ -65,7 +65,7 @@ class AppTheme {
         ),
         bodyLarge: GoogleFonts.outfit(
           fontSize: 16,
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.9),
         ),
         bodyMedium: GoogleFonts.outfit(
           fontSize: 14,
@@ -84,14 +84,14 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: glassCardBorder.withOpacity(0.4)),
+          borderSide: BorderSide(color: glassCardBorder.withValues(alpha: 0.4)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: accentTeal, width: 1.5),
         ),
         labelStyle: GoogleFonts.outfit(color: neuralGrey),
-        hintStyle: GoogleFonts.outfit(color: neuralGrey.withOpacity(0.5)),
+        hintStyle: GoogleFonts.outfit(color: neuralGrey.withValues(alpha: 0.5)),
       ),
 
       // Slider styling

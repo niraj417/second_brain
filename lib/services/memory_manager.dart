@@ -198,7 +198,7 @@ class MemoryManager {
     
     final List<String> contextParts = [];
     if (topMatches.isNotEmpty) {
-      contextParts.add("Relevant memories:\n" + topMatches.map((f) => "- $f").join("\n"));
+      contextParts.add("Relevant memories:\n${topMatches.map((f) => "- $f").join("\n")}");
     }
 
     final List<String> profileParts = [];
@@ -210,7 +210,7 @@ class MemoryManager {
     }
 
     if (profileParts.isNotEmpty) {
-      contextParts.add("Business Stats Context: " + profileParts.join("; "));
+      contextParts.add("Business Stats Context: ${profileParts.join("; ")}");
     }
 
     return contextParts.isNotEmpty ? contextParts.join("\n\n") : "";

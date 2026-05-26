@@ -57,6 +57,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       key: _apiKeyController.text,
     );
     
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Tuning profiles saved successfully.")),
     );
@@ -283,8 +284,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                   leading: Radio<String>(
                                     value: model["id"]!,
+                                    // ignore: deprecated_member_use
                                     groupValue: coPilot.selectedModel,
                                     activeColor: AppTheme.accentTeal,
+                                    // ignore: deprecated_member_use
                                     onChanged: (val) {
                                       coPilot.updateSettings(model: val);
                                     },
@@ -344,7 +347,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       
                       Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: AppTheme.glassDecoration(borderColor: AppTheme.accentTeal.withOpacity(0.3)),
+                        decoration: AppTheme.glassDecoration(borderColor: AppTheme.accentTeal.withValues(alpha: 0.3)),
                         child: Row(
                           children: [
                             const Icon(Icons.cloud_done_rounded, color: AppTheme.accentTeal, size: 24),

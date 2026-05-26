@@ -74,7 +74,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
                           const SizedBox(width: 6),
                           Text(
                             "ON-DEVICE SECURE",
-                            style: GoogleFonts.jetbrainsMono(fontSize: 8, color: AppTheme.accentTeal, fontWeight: FontWeight.bold),
+                            style: GoogleFonts.jetBrainsMono(fontSize: 8, color: AppTheme.accentTeal, fontWeight: FontWeight.bold),
                           ),
                         ],
                       )
@@ -90,7 +90,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
                       // A. DYNAMIC PROFILE SUMMARY CARD
                       Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: AppTheme.glassDecoration(borderColor: AppTheme.accentTeal.withOpacity(0.3)),
+                        decoration: AppTheme.glassDecoration(borderColor: AppTheme.accentTeal.withValues(alpha: 0.3)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -146,7 +146,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
                                     children: clients.map((c) => Chip(
                                       label: Text(c.toString(), style: const TextStyle(fontSize: 10, color: Colors.white70)),
                                       backgroundColor: AppTheme.obsidianBlack,
-                                      side: BorderSide(color: AppTheme.glassCardBorder.withOpacity(0.3)),
+                                      side: BorderSide(color: AppTheme.glassCardBorder.withValues(alpha: 0.3)),
                                       padding: EdgeInsets.zero,
                                     )).toList(),
                                   )
@@ -231,7 +231,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
                       // C. DATA PRIVACY CONTROL CARD
                       Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: AppTheme.glassDecoration(borderColor: AppTheme.softCrimson.withOpacity(0.3)),
+                        decoration: AppTheme.glassDecoration(borderColor: AppTheme.softCrimson.withValues(alpha: 0.3)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

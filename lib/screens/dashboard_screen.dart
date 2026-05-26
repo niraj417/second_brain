@@ -79,13 +79,13 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
     }
 
     // Determine visualizer color and state
-    Color visualizerColor = AppTheme.neuralGrey.withOpacity(0.3);
+    Color visualizerColor = AppTheme.neuralGrey.withValues(alpha: 0.3);
     String listenerText = "Smart Silence Active";
-    Widget visualizerWidget = Icon(Icons.mic_off_rounded, size: 48, color: AppTheme.neuralGrey.withOpacity(0.4));
+    Widget visualizerWidget = Icon(Icons.mic_off_rounded, size: 48, color: AppTheme.neuralGrey.withValues(alpha: 0.4));
     
     if (wsService.isListening) {
       if (wsService.statusMessage.contains("Smart Silence")) {
-        visualizerColor = AppTheme.neuralGrey.withOpacity(0.5);
+        visualizerColor = AppTheme.neuralGrey.withValues(alpha: 0.5);
         listenerText = "Smart Silence Active";
         visualizerWidget = SpinKitDoubleBounce(color: visualizerColor, size: 85);
       } else if (wsService.interventions.isNotEmpty && 
@@ -164,7 +164,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                             const SizedBox(width: 6),
                             Text(
                               wsService.isConnected ? "TWS ROUTED" : "PHONE MIC",
-                              style: GoogleFonts.jetbrainsMono(
+                              style: GoogleFonts.jetBrainsMono(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 color: wsService.isConnected ? AppTheme.accentTeal : AppTheme.neuralGrey,
@@ -321,7 +321,6 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                                           final isTrigger = wsService.interventions.any((element) => element["query"] == transcript);
                                           return Padding(
                                             padding: const EdgeInsets.only(bottom: 8.0),
-                                            style: isTrigger ? const TextStyle(color: Colors.white) : const TextStyle(color: Colors.white60),
                                             child: Container(
                                               padding: const EdgeInsets.all(8),
                                               decoration: BoxDecoration(
@@ -399,7 +398,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                                             child: Container(
                                               padding: const EdgeInsets.all(10),
                                               decoration: AppTheme.glassDecoration(
-                                                borderColor: AppTheme.primaryViolet.withOpacity(0.3),
+                                                borderColor: AppTheme.primaryViolet.withValues(alpha: 0.3),
                                                 bgColor: const Color(0x1F0F111E),
                                               ),
                                               child: Column(
@@ -410,7 +409,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                                                     children: [
                                                       Text(
                                                         (item["trigger_type"] ?? "Cognition").toUpperCase(),
-                                                        style: GoogleFonts.jetbrainsMono(
+                                                        style: GoogleFonts.jetBrainsMono(
                                                           fontSize: 8,
                                                           fontWeight: FontWeight.bold,
                                                           color: AppTheme.primaryViolet,
@@ -447,7 +446,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                                                   const SizedBox(height: 6),
                                                   Text(
                                                     "🧠 ${item["model"]} • Latency: ${item["latency"]}",
-                                                    style: GoogleFonts.jetbrainsMono(fontSize: 8, color: Colors.white24),
+                                                    style: GoogleFonts.jetBrainsMono(fontSize: 8, color: Colors.white24),
                                                   )
                                                 ],
                                               ),
@@ -494,9 +493,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                             return Padding(
                               padding: const EdgeInsets.only(right: 6.0),
                               child: ActionChip(
-                                label: Text(demo["label"]!, style: const TextStyle(fontSize: 11)),
+                                label: Text(demo["label"]!, style: const TextStyle(fontSize: 11, color: Colors.white70)),
                                 backgroundColor: AppTheme.deepSpaceBlue,
-                                textColor: Colors.white70,
                                 side: const BorderSide(color: Colors.white12),
                                 padding: EdgeInsets.zero,
                                 onPressed: () {

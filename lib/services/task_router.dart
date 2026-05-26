@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class RouterResult {
@@ -65,10 +66,15 @@ class TaskRouter {
       
       try {
         double res = 0;
-        if (op == "+") res = n1 + n2;
-        else if (op == "-") res = n1 - n2;
-        else if (op == "*") res = n1 * n2;
-        else if (op == "/") res = n2 != 0 ? n1 / n2 : 0;
+        if (op == "+") {
+          res = n1 + n2;
+        } else if (op == "-") {
+          res = n1 - n2;
+        } else if (op == "*") {
+          res = n1 * n2;
+        } else if (op == "/") {
+          res = n2 != 0 ? n1 / n2 : 0;
+        }
         
         if (res % 1 == 0) {
           return "Result is ${res.toInt()}.";
@@ -144,8 +150,11 @@ class TaskRouter {
       }
       
       String promptHelp = "Please input OpenRouter key in Settings.";
-      if (triggerType == "fact") promptHelp = "Fact check requires key/network connection.";
-      else if (triggerType == "comparison") promptHelp = "Comparison requires LLM API key.";
+      if (triggerType == "fact") {
+        promptHelp = "Fact check requires key/network connection.";
+      } else if (triggerType == "comparison") {
+        promptHelp = "Comparison requires LLM API key.";
+      }
       
       return RouterResult(
         success: true,
@@ -210,7 +219,7 @@ class TaskRouter {
             String reply = resBody["choices"][0]["message"]["content"].trim();
             
             // Clean Speech quotes and prefixes
-            reply = reply.replaceAll(RegExp(r'^["\']|["\']$'), '');
+            reply = reply.replaceAll(RegExp(r'''^["']|["']$'''), '');
             reply = reply.replaceAll(RegExp(r'^(here is|result is|the calculation is|sure)\s*', caseSensitive: false), '');
             
             // Capitalize
@@ -235,7 +244,7 @@ class TaskRouter {
       }
       
       // key failed, loop continues
-      print("API key #${i + 1} depleted/failed: $lastError. Cycling key...");
+      debugPrint("API key #${i + 1} depleted/failed: $lastError. Cycling key...");
     }
 
     // If all keys failed, attempt local offline evaluation before reporting full error
