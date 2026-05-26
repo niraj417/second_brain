@@ -22,6 +22,9 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   String _activeMode = "Standard Mode";
   final List<String> _modes = ["Standard Mode", "Sales Mode", "Meeting Mode", "Interview Mode", "Business Calculator"];
 
+  int _activeFeedTab = 0; // 0 for Live Audio, 1 for Whispers
+  bool _simulatorExpanded = false;
+
   // Premade simulation triggers for instant demo
   final List<Map<String, String>> _demoTriggers = [
     {
@@ -279,288 +282,365 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                 ),
                 const SizedBox(height: 16),
 
-                // 4. TRANSCRIPT & INTERVENTION DUAL PANELS
-                Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Panel A: Ambient Conversation Feed
-                      Expanded(
-                        flex: 4,
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: AppTheme.glassDecoration(borderColor: Colors.white10),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "AMBIENT AUDIO",
-                                style: GoogleFonts.outfit(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.neuralGrey,
-                                  letterSpacing: 1.5,
-                                ),
+                // 4. TRANSCRIPT & INTERVENTION SEGMENTED TAB PANEL
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => setState(() => _activeFeedTab = 0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _activeFeedTab == 0 ? AppTheme.accentTeal.withValues(alpha: 0.15) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: _activeFeedTab == 0 ? AppTheme.accentTeal : Colors.transparent,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.hearing_rounded, size: 14, color: _activeFeedTab == 0 ? Colors.white : AppTheme.neuralGrey),
+                            const SizedBox(width: 6),
+                            Text(
+                              "LIVE TRANSCRIPT",
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: _activeFeedTab == 0 ? Colors.white : AppTheme.neuralGrey,
+                                letterSpacing: 1,
                               ),
-                              const SizedBox(height: 8),
-                              Expanded(
-                                child: wsService.transcripts.isEmpty
-                                    ? Center(
-                                        child: Text(
-                                          "No audio heard. Speak below...",
-                                          style: GoogleFonts.outfit(fontSize: 12, color: Colors.white30),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      )
-                                    : ListView.builder(
-                                        controller: _transcriptScrollController,
-                                        itemCount: wsService.transcripts.length,
-                                        itemBuilder: (context, index) {
-                                          final transcript = wsService.transcripts[index];
-                                          // Highlight if triggered
-                                          final isTrigger = wsService.interventions.any((element) => element["query"] == transcript);
-                                          return Padding(
-                                            padding: const EdgeInsets.only(bottom: 8.0),
-                                            child: Container(
-                                              padding: const EdgeInsets.all(8),
-                                              decoration: BoxDecoration(
-                                                color: isTrigger ? const Color(0x128B5CF6) : Colors.transparent,
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                "🗣️ \"$transcript\"",
-                                                style: GoogleFonts.outfit(
-                                                  fontSize: 13,
-                                                  fontWeight: isTrigger ? FontWeight.w600 : FontWeight.normal,
-                                                  color: isTrigger ? AppTheme.accentTeal : Colors.white70,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: () => setState(() => _activeFeedTab = 1),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _activeFeedTab == 1 ? AppTheme.primaryViolet.withValues(alpha: 0.15) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: _activeFeedTab == 1 ? AppTheme.primaryViolet : Colors.transparent,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.chat_bubble_outline_rounded, size: 14, color: _activeFeedTab == 1 ? Colors.white : AppTheme.neuralGrey),
+                            const SizedBox(width: 6),
+                            Text(
+                              "AI WHISPERS (${wsService.interventions.length})",
+                              style: GoogleFonts.outfit(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: _activeFeedTab == 1 ? Colors.white : AppTheme.neuralGrey,
+                                  letterSpacing: 1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: _activeFeedTab == 0
+                        ? Container(
+                            key: const ValueKey("ambient_transcripts"),
+                            padding: const EdgeInsets.all(12),
+                            decoration: AppTheme.glassDecoration(borderColor: Colors.white10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "AMBIENT AUDIO FEED",
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.neuralGrey,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Expanded(
+                                  child: wsService.transcripts.isEmpty
+                                      ? Center(
+                                          child: Text(
+                                            "No audio heard. Speak or trigger simulation...",
+                                            style: GoogleFonts.outfit(fontSize: 12, color: Colors.white30),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        )
+                                      : ListView.builder(
+                                          controller: _transcriptScrollController,
+                                          itemCount: wsService.transcripts.length,
+                                          itemBuilder: (context, index) {
+                                            final transcript = wsService.transcripts[index];
+                                            final isTrigger = wsService.interventions.any((element) => element["query"] == transcript);
+                                            return Padding(
+                                              padding: const EdgeInsets.only(bottom: 8.0),
+                                              child: Container(
+                                                padding: const EdgeInsets.all(8),
+                                                decoration: BoxDecoration(
+                                                  color: isTrigger ? AppTheme.primaryViolet.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.02),
+                                                  borderRadius: BorderRadius.circular(6),
+                                                  border: Border.all(
+                                                    color: isTrigger ? AppTheme.primaryViolet.withValues(alpha: 0.2) : Colors.white10,
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  "🗣️ \"$transcript\"",
+                                                  style: GoogleFonts.outfit(
+                                                    fontSize: 13,
+                                                    fontWeight: isTrigger ? FontWeight.w600 : FontWeight.normal,
+                                                    color: isTrigger ? AppTheme.accentTeal : Colors.white70,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-
-                      // Panel B: Subconscious AI Interventions
-                      Expanded(
-                        flex: 6,
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: AppTheme.glassDecoration(borderColor: AppTheme.glassCardBorder),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    "AI COGNITIVE WHISPERS",
-                                    style: GoogleFonts.outfit(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.primaryViolet,
-                                      letterSpacing: 1.5,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_sweep_rounded, size: 16, color: Colors.white24),
-                                    onPressed: () {
-                                      wsService.clearInterventions();
-                                    },
-                                    tooltip: "Clear Whispers",
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                  )
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Expanded(
-                                child: wsService.interventions.isEmpty
-                                    ? Center(
-                                        child: Text(
-                                          "AI is silent.\nIntervenes only on math, business or facts.",
-                                          style: GoogleFonts.outfit(fontSize: 12, color: Colors.white30),
-                                          textAlign: TextAlign.center,
+                                            );
+                                          },
                                         ),
-                                      )
-                                    : ListView.builder(
-                                        controller: _interventionScrollController,
-                                        itemCount: wsService.interventions.length,
-                                        itemBuilder: (context, index) {
-                                          final item = wsService.interventions[index];
-                                          return Padding(
-                                            padding: const EdgeInsets.only(bottom: 10.0),
-                                            child: Container(
-                                              padding: const EdgeInsets.all(10),
-                                              decoration: AppTheme.glassDecoration(
-                                                borderColor: AppTheme.primaryViolet.withValues(alpha: 0.3),
-                                                bgColor: const Color(0x1F0F111E),
-                                              ),
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
-                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                    children: [
-                                                      Text(
-                                                        (item["trigger_type"] ?? "Cognition").toUpperCase(),
-                                                        style: GoogleFonts.jetBrainsMono(
-                                                          fontSize: 8,
-                                                          fontWeight: FontWeight.bold,
-                                                          color: AppTheme.primaryViolet,
-                                                        ),
-                                                      ),
-                                                      Text(
-                                                        "${item["timestamp"] ?? ''}",
-                                                        style: GoogleFonts.outfit(fontSize: 9, color: Colors.white30),
-                                                      )
-                                                    ],
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    "👂 Heard: \"${item["query"]}\"",
-                                                    style: GoogleFonts.outfit(fontSize: 11, color: Colors.white54, fontStyle: FontStyle.italic),
-                                                  ),
-                                                  const SizedBox(height: 6),
-                                                  Row(
-                                                    children: [
-                                                      const Icon(Icons.volume_up_rounded, size: 14, color: AppTheme.accentTeal),
-                                                      const SizedBox(width: 6),
-                                                      Expanded(
-                                                        child: Text(
-                                                          item["response"] ?? "",
-                                                          style: GoogleFonts.outfit(
-                                                            fontSize: 14,
+                                ),
+                              ],
+                            ),
+                          )
+                        : Container(
+                            key: const ValueKey("ai_interventions"),
+                            padding: const EdgeInsets.all(12),
+                            decoration: AppTheme.glassDecoration(borderColor: AppTheme.glassCardBorder),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "AI COGNITIVE WHISPERS",
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.primaryViolet,
+                                        letterSpacing: 1.5,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_sweep_rounded, size: 16, color: Colors.white24),
+                                      onPressed: () {
+                                        wsService.clearInterventions();
+                                      },
+                                      tooltip: "Clear Whispers",
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                    )
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Expanded(
+                                  child: wsService.interventions.isEmpty
+                                      ? Center(
+                                          child: Text(
+                                            "AI is silent.\nIntervenes only on math, business, or facts.",
+                                            style: GoogleFonts.outfit(fontSize: 12, color: Colors.white30),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        )
+                                      : ListView.builder(
+                                          controller: _interventionScrollController,
+                                          itemCount: wsService.interventions.length,
+                                          itemBuilder: (context, index) {
+                                            final item = wsService.interventions[index];
+                                            return Padding(
+                                              padding: const EdgeInsets.only(bottom: 10.0),
+                                              child: Container(
+                                                padding: const EdgeInsets.all(10),
+                                                decoration: AppTheme.glassDecoration(
+                                                  borderColor: AppTheme.primaryViolet.withValues(alpha: 0.3),
+                                                  bgColor: const Color(0x1F0F111E),
+                                                ),
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Row(
+                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                      children: [
+                                                        Text(
+                                                          (item["trigger_type"] ?? "Cognition").toUpperCase(),
+                                                          style: GoogleFonts.jetBrainsMono(
+                                                            fontSize: 8,
                                                             fontWeight: FontWeight.bold,
-                                                            color: Colors.white,
+                                                            color: AppTheme.primaryViolet,
                                                           ),
                                                         ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  const SizedBox(height: 6),
-                                                  Text(
-                                                    "🧠 ${item["model"]} • Latency: ${item["latency"]}",
-                                                    style: GoogleFonts.jetBrainsMono(fontSize: 8, color: Colors.white24),
-                                                  )
-                                                ],
+                                                        Text(
+                                                          "${item["timestamp"] ?? ''}",
+                                                          style: GoogleFonts.outfit(fontSize: 9, color: Colors.white30),
+                                                        )
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      "👂 Heard: \"${item["query"]}\"",
+                                                      style: GoogleFonts.outfit(fontSize: 11, color: Colors.white54, fontStyle: FontStyle.italic),
+                                                    ),
+                                                    const SizedBox(height: 6),
+                                                    Row(
+                                                      children: [
+                                                        const Icon(Icons.volume_up_rounded, size: 14, color: AppTheme.accentTeal),
+                                                        const SizedBox(width: 6),
+                                                        Expanded(
+                                                          child: Text(
+                                                            item["response"] ?? "",
+                                                            style: GoogleFonts.outfit(
+                                                              fontSize: 14,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 6),
+                                                    Text(
+                                                      "🧠 ${item["model"]} • Latency: ${item["latency"]}",
+                                                      style: GoogleFonts.jetBrainsMono(fontSize: 8, color: Colors.white24),
+                                                    )
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                              ),
-                            ],
+                                            );
+                                          },
+                                        ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
                   ),
                 ),
                 const SizedBox(height: 10),
 
                 // 5. INTERACTIVE CONSOLE FOR SIMULATION
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: AppTheme.glassDecoration(borderColor: Colors.white12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "COGNITIVE TEST ENGINE (SIMULATE SPEECH)",
-                        style: GoogleFonts.outfit(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.accentTeal,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      
-                      // Preset Scenario Badges
-                      SizedBox(
-                        height: 30,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _demoTriggers.length,
-                          itemBuilder: (context, index) {
-                            final demo = _demoTriggers[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 6.0),
-                              child: ActionChip(
-                                label: Text(demo["label"]!, style: const TextStyle(fontSize: 11, color: Colors.white70)),
-                                backgroundColor: AppTheme.deepSpaceBlue,
-                                side: const BorderSide(color: Colors.white12),
-                                padding: EdgeInsets.zero,
-                                onPressed: () {
-                                  if (!wsService.isListening) {
-                                    wsService.toggleListening();
-                                  }
-                                  wsService.sendTranscript(demo["text"]!);
-                                },
-                              ),
-                            );
+                if (wsService.sttProvider == "Simulated")
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: AppTheme.glassDecoration(borderColor: Colors.white12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _simulatorExpanded = !_simulatorExpanded;
+                            });
                           },
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      
-                      // Manual Input row
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: 40,
-                              child: TextField(
-                                controller: _customInputController,
-                                decoration: const InputDecoration(
-                                  hintText: "Speak customized Hinglish or Bengali math...",
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "COGNITIVE TEST ENGINE (SIMULATE SPEECH)",
+                                style: GoogleFonts.outfit(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.accentTeal,
+                                  letterSpacing: 1.5,
                                 ),
-                                style: const TextStyle(fontSize: 13),
-                                onSubmitted: (val) {
-                                  if (val.trim().isNotEmpty) {
-                                    if (!wsService.isListening) {
-                                      wsService.toggleListening();
-                                    }
-                                    wsService.sendTranscript(val);
-                                    _customInputController.clear();
-                                  }
-                                },
                               ),
-                            ),
+                              Icon(
+                                _simulatorExpanded ? Icons.keyboard_arrow_down_rounded : Icons.keyboard_arrow_up_rounded,
+                                size: 16,
+                                color: AppTheme.accentTeal,
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
+                        ),
+                        if (_simulatorExpanded) ...[
+                          const SizedBox(height: 8),
+                          // Preset Scenario Badges
                           SizedBox(
-                            height: 40,
-                            child: IconButton(
-                              icon: const Icon(Icons.send_rounded, color: AppTheme.accentTeal),
-                              style: IconButton.styleFrom(
-                                backgroundColor: AppTheme.glassCardBg,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              onPressed: () {
-                                final text = _customInputController.text;
-                                if (text.trim().isNotEmpty) {
-                                  if (!wsService.isListening) {
-                                    wsService.toggleListening();
-                                  }
-                                  wsService.sendTranscript(text);
-                                  _customInputController.clear();
-                                }
+                            height: 30,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _demoTriggers.length,
+                              itemBuilder: (context, index) {
+                                final demo = _demoTriggers[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 6.0),
+                                  child: ActionChip(
+                                    label: Text(demo["label"]!, style: const TextStyle(fontSize: 11, color: Colors.white70)),
+                                    backgroundColor: AppTheme.deepSpaceBlue,
+                                    side: const BorderSide(color: Colors.white12),
+                                    padding: EdgeInsets.zero,
+                                    onPressed: () {
+                                      if (!wsService.isListening) {
+                                        wsService.toggleListening();
+                                      }
+                                      wsService.sendTranscript(demo["text"]!);
+                                    },
+                                  ),
+                                );
                               },
                             ),
-                          )
+                          ),
+                          const SizedBox(height: 8),
+                          // Manual Input row
+                          Row(
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  height: 40,
+                                  child: TextField(
+                                    controller: _customInputController,
+                                    decoration: const InputDecoration(
+                                      hintText: "Speak customized Hinglish or Bengali math...",
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    ),
+                                    style: const TextStyle(fontSize: 13),
+                                    onSubmitted: (val) {
+                                      if (val.trim().isNotEmpty) {
+                                        if (!wsService.isListening) {
+                                          wsService.toggleListening();
+                                        }
+                                        wsService.sendTranscript(val);
+                                        _customInputController.clear();
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                height: 40,
+                                child: IconButton(
+                                  icon: const Icon(Icons.send_rounded, color: AppTheme.accentTeal),
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: AppTheme.glassCardBg,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  onPressed: () {
+                                    final text = _customInputController.text;
+                                    if (text.trim().isNotEmpty) {
+                                      if (!wsService.isListening) {
+                                        wsService.toggleListening();
+                                      }
+                                      wsService.sendTranscript(text);
+                                      _customInputController.clear();
+                                    }
+                                  },
+                                ),
+                              )
+                            ],
+                          ),
                         ],
-                      )
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                
                 
                 // 6. BOTTOM NAVIGATION SIMULATED BAR
                 Padding(

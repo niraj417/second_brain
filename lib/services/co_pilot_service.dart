@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import 'trigger_detector.dart';
 import 'memory_manager.dart';
@@ -20,6 +22,10 @@ class CoPilotService extends ChangeNotifier {
   
   final List<Map<String, dynamic>> _interventions = [];
   final List<String> _transcripts = [];
+  
+  // Real Mic Engine
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _speechInitialized = false;
   
   // Persistent Settings
   String _openRouterKey = "";
@@ -68,27 +74,29 @@ class CoPilotService extends ChangeNotifier {
     _statusMessage = "Neural Link Active (Serverless Mode)";
     notifyListeners();
 
-    if (_openRouterKey.isNotEmpty) {
-      fetchOpenRouterModels();
-    }
+    // Fetch models on init so catalog populates immediately (key not required)
+    fetchOpenRouterModels();
   }
 
   Future<void> fetchOpenRouterModels() async {
-    if (_openRouterKey.isEmpty) return;
-    
     _isFetchingModels = true;
     _statusMessage = "Fetching latest OpenRouter model catalogs...";
     notifyListeners();
 
     try {
-      final firstKey = _openRouterKey.split(",").first.trim();
+      final firstKey = _openRouterKey.isNotEmpty ? _openRouterKey.split(",").first.trim() : "";
       final url = Uri.parse("https://openrouter.ai/api/v1/models");
+      
+      final Map<String, String> headers = {
+        "Content-Type": "application/json",
+      };
+      if (firstKey.isNotEmpty) {
+        headers["Authorization"] = "Bearer $firstKey";
+      }
+
       final response = await http.get(
         url,
-        headers: {
-          "Authorization": "Bearer $firstKey",
-          "Content-Type": "application/json",
-        },
+        headers: headers,
       ).timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
@@ -160,8 +168,17 @@ class CoPilotService extends ChangeNotifier {
       await prefs.setDouble("sensitivity", sens);
     }
     if (stt != null) {
+      final oldStt = _sttProvider;
       _sttProvider = stt;
       await prefs.setString("stt_provider", stt);
+      
+      if (_isListening) {
+        if (oldStt != "Simulated") {
+          await _speech.stop();
+        }
+        _isListening = false;
+        toggleListening();
+      }
     }
     
     notifyListeners();
@@ -171,14 +188,88 @@ class CoPilotService extends ChangeNotifier {
     }
   }
 
-  void toggleListening() {
-    _isListening = !_isListening;
+  Future<void> toggleListening() async {
     if (_isListening) {
-      _statusMessage = "Continuous overlay active...";
-    } else {
+      _isListening = false;
       _statusMessage = "Cognitive assistance paused.";
+      if (_sttProvider != "Simulated") {
+        await _speech.stop();
+      }
+      notifyListeners();
+      return;
     }
+
+    if (_sttProvider == "Simulated") {
+      _isListening = true;
+      _statusMessage = "Simulated overlay active. Use preset chips to test!";
+      notifyListeners();
+      return;
+    }
+
+    _statusMessage = "Requesting microphone permission...";
     notifyListeners();
+
+    try {
+      final status = await Permission.microphone.request();
+      if (!status.isGranted) {
+        _statusMessage = "Error: Microphone permission denied.";
+        notifyListeners();
+        return;
+      }
+
+      _statusMessage = "Initializing Speech Engine...";
+      notifyListeners();
+
+      if (!_speechInitialized) {
+        _speechInitialized = await _speech.initialize(
+          onStatus: (status) {
+            debugPrint("Speech status: $status");
+            if (status == "notListening" && _isListening) {
+              _startSpeechListening();
+            }
+          },
+          onError: (error) {
+            debugPrint("Speech error: ${error.errorMsg}");
+            if (_isListening) {
+              _startSpeechListening();
+            }
+          },
+        );
+      }
+
+      if (_speechInitialized) {
+        _isListening = true;
+        _statusMessage = "Continuous ambient listening active...";
+        notifyListeners();
+        _startSpeechListening();
+      } else {
+        _statusMessage = "Failed to initialize Speech SDK.";
+        notifyListeners();
+      }
+    } catch (e) {
+      _statusMessage = "Mic SDK Error: ${e.toString()}";
+      notifyListeners();
+    }
+  }
+
+  void _startSpeechListening() {
+    if (!_isListening || !_speechInitialized) return;
+    
+    _speech.listen(
+      onResult: (result) {
+        if (result.recognizedWords.isNotEmpty) {
+          if (result.finalResult) {
+            sendTranscript(result.recognizedWords);
+          }
+        }
+      },
+      listenFor: const Duration(seconds: 30),
+      pauseFor: const Duration(seconds: 4),
+      // ignore: deprecated_member_use
+      partialResults: true,
+      // ignore: deprecated_member_use
+      cancelOnError: false,
+    );
   }
 
   // Receives transcript segments directly from mic / simulation pad
