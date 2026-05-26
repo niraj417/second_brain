@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:flutter_tts/flutter_tts.dart';
 
 import 'trigger_detector.dart';
 import 'memory_manager.dart';
@@ -26,6 +27,14 @@ class CoPilotService extends ChangeNotifier {
   // Real Mic Engine
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _speechInitialized = false;
+
+  // Real TTS Engine
+  final FlutterTts _tts = FlutterTts();
+  bool _ttsInitialized = false;
+
+  // STT Buffers and Timers
+  String _lastRecognizedWords = "";
+  Timer? _speechDebounceTimer;
   
   // Persistent Settings
   String _openRouterKey = "";
@@ -76,6 +85,20 @@ class CoPilotService extends ChangeNotifier {
 
     // Fetch models on init so catalog populates immediately (key not required)
     fetchOpenRouterModels();
+  }
+
+  Future<void> _initTts() async {
+    if (_ttsInitialized) return;
+    try {
+      await _tts.setLanguage("en-US");
+      await _tts.setSpeechRate(0.55); // Clear, premium whisper speed for TWS
+      await _tts.setVolume(1.0);
+      await _tts.setPitch(1.0);
+      _ttsInitialized = true;
+      debugPrint("TTS Engine initialized successfully.");
+    } catch (e) {
+      debugPrint("TTS initialization error: $e");
+    }
   }
 
   Future<void> fetchOpenRouterModels() async {
@@ -191,6 +214,11 @@ class CoPilotService extends ChangeNotifier {
   Future<void> toggleListening() async {
     if (_isListening) {
       _isListening = false;
+      _speechDebounceTimer?.cancel();
+      _lastRecognizedWords = "";
+      try {
+        await _tts.stop();
+      } catch (_) {}
       _statusMessage = "Cognitive assistance paused.";
       if (_sttProvider != "Simulated") {
         await _speech.stop();
@@ -224,8 +252,15 @@ class CoPilotService extends ChangeNotifier {
         _speechInitialized = await _speech.initialize(
           onStatus: (status) {
             debugPrint("Speech status: $status");
-            if (status == "notListening" && _isListening) {
-              _startSpeechListening();
+            if (status == "notListening") {
+              if (_isListening && _lastRecognizedWords.isNotEmpty) {
+                final textToSend = _lastRecognizedWords;
+                _lastRecognizedWords = "";
+                sendTranscript(textToSend);
+              }
+              if (_isListening) {
+                _startSpeechListening();
+              }
             }
           },
           onError: (error) {
@@ -254,23 +289,43 @@ class CoPilotService extends ChangeNotifier {
 
   void _startSpeechListening() {
     if (!_isListening || !_speechInitialized) return;
+    if (_speech.isListening) return; // Prevent double-triggering
+    
+    _lastRecognizedWords = "";
     
     _speech.listen(
       onResult: (result) {
         if (result.recognizedWords.isNotEmpty) {
+          _lastRecognizedWords = result.recognizedWords;
+          
           if (result.finalResult) {
+            _speechDebounceTimer?.cancel();
             sendTranscript(result.recognizedWords);
+            _lastRecognizedWords = "";
+          } else {
+            _speechDebounceTimer?.cancel();
+            _speechDebounceTimer = Timer(const Duration(seconds: 2), () async {
+              if (_lastRecognizedWords.isNotEmpty && _isListening) {
+                final textToSend = _lastRecognizedWords;
+                _lastRecognizedWords = "";
+                _speechDebounceTimer?.cancel();
+                await sendTranscript(textToSend);
+                await _speech.stop(); // Stops current listening session, triggering onStatus to restart fresh
+              }
+            });
           }
         }
       },
       // ignore: deprecated_member_use
-      listenFor: const Duration(seconds: 30),
+      listenFor: const Duration(minutes: 20),
       // ignore: deprecated_member_use
-      pauseFor: const Duration(seconds: 4),
+      pauseFor: const Duration(seconds: 8),
       // ignore: deprecated_member_use
       partialResults: true,
       // ignore: deprecated_member_use
       cancelOnError: false,
+      // ignore: deprecated_member_use
+      listenMode: stt.ListenMode.dictation,
     );
   }
 
@@ -323,6 +378,12 @@ class CoPilotService extends ChangeNotifier {
         
         if (_interventions.length > 50) _interventions.removeAt(0);
         _statusMessage = "Whisper delivered to TWS.";
+
+        // Speak results through TWS Whisper
+        await _initTts();
+        if (_ttsInitialized) {
+          await _tts.speak(result.response);
+        }
       } else {
         _statusMessage = "API Exception: Key depleted.";
         _interventions.add({

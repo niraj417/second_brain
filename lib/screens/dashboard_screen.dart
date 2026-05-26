@@ -106,6 +106,47 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
     }
 
     return Scaffold(
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: AppTheme.obsidianBlack,
+          border: Border(
+            top: BorderSide(color: Colors.white10, width: 1),
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: SafeArea(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              TextButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.explore_outlined, color: AppTheme.accentTeal),
+                label: Text("DASHBOARD", style: GoogleFonts.outfit(color: AppTheme.accentTeal, fontWeight: FontWeight.bold)),
+              ),
+              TextButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MemoryScreen()),
+                  );
+                },
+                icon: const Icon(Icons.psychology_outlined, color: AppTheme.neuralGrey),
+                label: Text("LEARNINGS", style: GoogleFonts.outfit(color: AppTheme.neuralGrey)),
+              ),
+              TextButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  );
+                },
+                icon: const Icon(Icons.tune_outlined, color: AppTheme.neuralGrey),
+                label: Text("TUNING", style: GoogleFonts.outfit(color: AppTheme.neuralGrey)),
+              ),
+            ],
+          ),
+        ),
+      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -640,42 +681,6 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                       ],
                     ),
                   ),
-                
-                
-                // 6. BOTTOM NAVIGATION SIMULATED BAR
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      TextButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.explore_outlined, color: AppTheme.accentTeal),
-                        label: Text("DASHBOARD", style: GoogleFonts.outfit(color: AppTheme.accentTeal, fontWeight: FontWeight.bold)),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const MemoryScreen()),
-                          );
-                        },
-                        icon: const Icon(Icons.psychology_outlined, color: AppTheme.neuralGrey),
-                        label: Text("LEARNINGS", style: GoogleFonts.outfit(color: AppTheme.neuralGrey)),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const SettingsScreen()),
-                          );
-                        },
-                        icon: const Icon(Icons.tune_outlined, color: AppTheme.neuralGrey),
-                        label: Text("TUNING", style: GoogleFonts.outfit(color: AppTheme.neuralGrey)),
-                      ),
-                    ],
-                  ),
-                )
               ],
             ),
           ),
